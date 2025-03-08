@@ -22,7 +22,7 @@ const Navbar = () => {
     const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      if (user && user.email === 'pranabibaruah@gmail.com') {
+      if (user && user.email === 'pranabibaruah25@gmail.com') {
         setIsAdmin(true);
       } else {
         setIsAdmin(false);

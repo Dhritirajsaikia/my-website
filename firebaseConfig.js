@@ -6,13 +6,13 @@ import { getFirestore } from 'firebase/firestore'; // Add Firestore import
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCu0dYOJXyGw-hv1HdJiPvX5oq9of5px44",
-  authDomain: "crafthub-c7921.firebaseapp.com",
-  projectId: "crafthub-c7921",
-  storageBucket: "crafthub-c7921.firebasestorage.app",
-  messagingSenderId: "736108120286",
-  appId: "1:736108120286:web:d3f9647f121cfdb6349a4f",
-  measurementId: "G-1FL5VE94LY"
+  apiKey: "AIzaSyCfm_HW0VcD94iH-BEDHr9mtSvBO08J8Eo",
+  authDomain: "crafthub-d545c.firebaseapp.com",
+  projectId: "crafthub-d545c",
+  storageBucket: "crafthub-d545c.firebasestorage.app",
+  messagingSenderId: "690225042306",
+  appId: "1:690225042306:web:64adce68254ba6da07f59b",
+  measurementId: "G-F7YH3X5ZC7"
 };
 
 // Initialize Firebase
