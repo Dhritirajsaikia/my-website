@@ -126,7 +126,7 @@ const CoursePage = () => {
           setEnrollments(prev => [...prev, { userId: user.uid, courseId: course.id, status: 'paid' }]);
           setOrderId(enrollmentId);
 
-          // Construct WhatsApp message with enrollment details
+         
           const message = `New Course Enrollment\n\nEnrollment ID: ${enrollmentId}\nCourse: ${course.title}\nPrice: ₹${course.price}\nPayment ID: ${response.razorpay_payment_id}\nName: ${user.displayName || ''}\nEmail: ${user.email}`;
           const adminNumber = '917002970138'; // Replace with your admin's phone number (without the +)
           const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
