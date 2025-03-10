@@ -235,7 +235,7 @@ const CoursePage = () => {
 
         {filteredCourses.length === 0 ? (
           <div className="text-center my-12 text-xl font-semibold">
-            No courses found matching "{searchTerm}".
+            No courses found "{searchTerm}".
           </div>
         ) : (
           <>
