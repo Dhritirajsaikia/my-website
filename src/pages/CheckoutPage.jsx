@@ -159,7 +159,7 @@ const CheckoutPage = () => {
               .join(', ');
 
             // Construct WhatsApp message with order details.
-            const adminNumber = '916000460553'; // Replace with your admin's phone number (international format without the +)
+            const adminNumber = '917002970138'; // Replace with your admin's phone number (international format without the +)
             const message = `New Order Received\n\nOrder ID: ${orderRef.id}\nItems: ${itemsList}\nName: ${formData.fullName}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nAddress: ${formData.address}, ${formData.city}, ${formData.state} - ${formData.zipCode}\nTotal Price: ₹${totalPrice.toFixed(2)}`;
             
             // Check if the user is on a mobile device
