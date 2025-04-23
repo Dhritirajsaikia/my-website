@@ -196,7 +196,6 @@ const CourseDetails = () => {
         playsinline: 1,
         autoplay: 0,
         origin: window.location.origin,
-        nohistory:1
       },
       events: {
         onReady: onPlayerReady,
@@ -277,6 +276,18 @@ const CourseDetails = () => {
     youtubePlayerRef.current.seekTo(seekTime, true);
   };
 
+  // Handle touch events for the progress bar
+  const handleProgressBarTouch = (e) => {
+    if (!youtubePlayerRef.current || !progressBarRef.current) return;
+    
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const touchX = e.touches[0].clientX;
+    const pos = (touchX - rect.left) / rect.width;
+    const seekTime = pos * duration;
+    
+    youtubePlayerRef.current.seekTo(seekTime, true);
+  };
+
   // Format time (seconds) to MM:SS
   const formatTime = (seconds) => {
     if (isNaN(seconds)) return '0:00';
@@ -350,8 +361,8 @@ const CourseDetails = () => {
                     <div className="absolute bottom-0 right-0 w-24 h-16 z-20 video-fullscreen-block" />
                     <div className="absolute bottom-0 left-0 w-24 h-16 z-20 video-settings-block" />
                     
-                    {/* Custom video controls */}
-                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center p-3 video-controls-container z-30">
+                    {/* Custom video controls - Always visible */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent flex items-center p-3 video-controls-container z-30">
                       <button 
                         onClick={togglePlay} 
                         className="text-white mr-4"
@@ -369,8 +380,10 @@ const CourseDetails = () => {
                       <div className="flex-1 mx-4">
                         <div 
                           ref={progressBarRef} 
-                          className="h-2 bg-gray-600 rounded cursor-pointer" 
+                          className="h-3 bg-gray-600 rounded cursor-pointer" 
                           onClick={handleProgressBarClick}
+                          onTouchStart={handleProgressBarTouch}
+                          onTouchMove={handleProgressBarTouch}
                         >
                           <div 
                             className="h-full bg-indigo-600 rounded" 
