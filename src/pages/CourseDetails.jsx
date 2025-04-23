@@ -502,7 +502,7 @@ const CourseDetails = () => {
           color: rgba(255, 255, 255, 0.7);
           font-size: 14px;
           padding: 5px 10px;
-          background: rgba(0, 0, 0, 0.3);
+          // background: rgba(0, 0, 0, 0.3);
           border-radius: 4px;
           pointer-events: none;
           animation: watermarkMove 40s infinite alternate;
