@@ -284,7 +284,7 @@ const CoursePage = () => {
                           }`}
                         disabled={
                           !isEnrolled(course.id) &&
-                          (!user || user.email !== "pranabibaruah@gmail.com")
+                          (!user || user.email !== "pranabibaruah25@gmail.com")
                         }
                       >
                         View Course
@@ -333,7 +333,7 @@ const CoursePage = () => {
                           ? "bg-gray-500 cursor-not-allowed"
                           : "bg-blue-600 hover:bg-blue-700"
                           }`}
-                        disabled={!isEnrolled(course.id) && (!user || user.email !== "pranabibaruah@gmail.com")}
+                        disabled={!isEnrolled(course.id) && (!user || user.email !== "pranabibaruah25@gmail.com")}
                       >
                         View Course
                       </button>

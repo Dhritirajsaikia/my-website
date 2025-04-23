@@ -5,7 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
-import { Maximize, Lock, Play } from 'lucide-react';
+import { Maximize, Lock, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
 const Loader = () => (
   <div className="flex flex-col items-center justify-center mt-12">
@@ -24,6 +24,15 @@ const CourseDetails = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const videoContainerRef = useRef(null);
+  const playerRef = useRef(null);
+  const youtubePlayerRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [playerReady, setPlayerReady] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const progressBarRef = useRef(null);
+  const progressUpdateInterval = useRef(null);
 
   // Get authenticated user
   useEffect(() => {
@@ -130,6 +139,100 @@ const CourseDetails = () => {
     return match ? match[1] : null;
   };
 
+  // Load YouTube IFrame API
+  useEffect(() => {
+    // Load the YouTube IFrame API if not already loaded
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+
+    // Initialize player when API is ready
+    window.onYouTubeIframeAPIReady = () => {
+      initializePlayer();
+    };
+
+    // If API was already loaded previously
+    if (window.YT && window.YT.Player) {
+      initializePlayer();
+    }
+
+    return () => {
+      // Clean up interval when component unmounts
+      if (progressUpdateInterval.current) {
+        clearInterval(progressUpdateInterval.current);
+      }
+    };
+  }, []);
+
+  // Initialize or reinitialize the player when selected video changes
+  useEffect(() => {
+    if (selectedVideo && window.YT && window.YT.Player) {
+      if (youtubePlayerRef.current) {
+        // Destroy existing player
+        youtubePlayerRef.current.destroy();
+      }
+      initializePlayer();
+    }
+  }, [selectedVideo]);
+
+  const initializePlayer = () => {
+    if (!playerRef.current || !selectedVideo) return;
+
+    const videoId = extractYoutubeId(selectedVideo.youtubeUrl);
+    if (!videoId) return;
+
+    youtubePlayerRef.current = new window.YT.Player(playerRef.current, {
+      videoId: videoId,
+      playerVars: {
+        modestbranding: 1,
+        rel: 0,
+        showinfo: 0,
+        controls: 0,
+        disablekb: 1,
+        fs: 0,
+        playsinline: 1,
+        autoplay: 0,
+        origin: window.location.origin,
+        nohistory:1
+      },
+      events: {
+        onReady: onPlayerReady,
+        onStateChange: onPlayerStateChange,
+        onError: onPlayerError,
+      },
+    });
+  };
+
+  const onPlayerReady = (event) => {
+    setPlayerReady(true);
+    setDuration(event.target.getDuration());
+    
+    // Start progress update interval
+    if (progressUpdateInterval.current) {
+      clearInterval(progressUpdateInterval.current);
+    }
+    
+    progressUpdateInterval.current = setInterval(() => {
+      if (youtubePlayerRef.current) {
+        const currentTime = youtubePlayerRef.current.getCurrentTime();
+        const duration = youtubePlayerRef.current.getDuration();
+        setCurrentTime(currentTime);
+        setDuration(duration);
+      }
+    }, 1000);
+  };
+
+  const onPlayerStateChange = (event) => {
+    setIsPlaying(event.data === window.YT.PlayerState.PLAYING);
+  };
+
+  const onPlayerError = (event) => {
+    console.error('YouTube Player Error:', event.data);
+  };
+
   // Toggle fullscreen for the video container only
   const handleFullScreen = () => {
     if (videoContainerRef.current) {
@@ -139,6 +242,48 @@ const CourseDetails = () => {
         videoContainerRef.current.requestFullscreen();
       }
     }
+  };
+
+  // Custom control handlers
+  const togglePlay = () => {
+    if (!youtubePlayerRef.current) return;
+    
+    if (isPlaying) {
+      youtubePlayerRef.current.pauseVideo();
+    } else {
+      youtubePlayerRef.current.playVideo();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const toggleMute = () => {
+    if (!youtubePlayerRef.current) return;
+    
+    if (isMuted) {
+      youtubePlayerRef.current.unMute();
+    } else {
+      youtubePlayerRef.current.mute();
+    }
+    setIsMuted(!isMuted);
+  };
+
+  const handleProgressBarClick = (e) => {
+    if (!youtubePlayerRef.current || !progressBarRef.current) return;
+    
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    const seekTime = pos * duration;
+    
+    youtubePlayerRef.current.seekTo(seekTime, true);
+  };
+
+  // Format time (seconds) to MM:SS
+  const formatTime = (seconds) => {
+    if (isNaN(seconds)) return '0:00';
+    
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   if (loading) return <Loader />;
@@ -158,11 +303,6 @@ const CourseDetails = () => {
         </button>
       </div>
     );
-
-  const videoId = selectedVideo ? extractYoutubeId(selectedVideo.youtubeUrl) : null;
-  const embedUrl = videoId
-    ? `https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0&controls=1&fs=0`
-    : '';
 
   return (
     <>
@@ -187,33 +327,69 @@ const CourseDetails = () => {
               >
                 {selectedVideo ? (
                   <>
-                    <iframe
+                    {/* YouTube player div */}
+                    <div 
+                      id="youtube-player" 
+                      ref={playerRef} 
                       className="absolute top-0 left-0 w-full h-full"
-                      src={embedUrl}
-                      title="YouTube video player"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      sandbox="allow-scripts allow-same-origin allow-fullscreen"
-                      onContextMenu={(e) => e.preventDefault()}
-                    ></iframe>
+                    ></div>
+                    
+                    {/* Watermark */}
                     {user && (
                       <span className="watermark">{user.email}</span>
                     )}
-                    <div
-                      className="mobile-share-overlay"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
+                    
+                    {/* Main video protection overlay */}
+                    <div 
+                      className="absolute inset-0 z-10 video-protection-overlay"
+                      onClick={togglePlay}
                     />
-                    <div
-                      className="desktop-copy-overlay"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                    />
+                    
+                    {/* Strategic overlays for blocking specific YouTube controls */}
+                    <div className="absolute top-0 right-0 w-24 h-16 z-20 video-share-block" />
+                    <div className="absolute bottom-0 right-0 w-24 h-16 z-20 video-fullscreen-block" />
+                    <div className="absolute bottom-0 left-0 w-24 h-16 z-20 video-settings-block" />
+                    
+                    {/* Custom video controls */}
+                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center p-3 video-controls-container z-30">
+                      <button 
+                        onClick={togglePlay} 
+                        className="text-white mr-4"
+                      >
+                        {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                      </button>
+                      
+                      <button 
+                        onClick={toggleMute} 
+                        className="text-white mr-4"
+                      >
+                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                      </button>
+                      
+                      <div className="flex-1 mx-4">
+                        <div 
+                          ref={progressBarRef} 
+                          className="h-2 bg-gray-600 rounded cursor-pointer" 
+                          onClick={handleProgressBarClick}
+                        >
+                          <div 
+                            className="h-full bg-indigo-600 rounded" 
+                            style={{ width: `${(currentTime / duration) * 100}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-white mt-1">
+                          <span>{formatTime(currentTime)}</span>
+                          <span>{formatTime(duration)}</span>
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={handleFullScreen} 
+                        className="text-white"
+                      >
+                        <Maximize size={20} />
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <div className="flex items-center justify-center h-full bg-gray-800 text-white">
@@ -308,7 +484,7 @@ const CourseDetails = () => {
         
         .watermark {
           position: absolute;
-          z-index: 10;
+          z-index: 50;
           color: rgba(255, 255, 255, 0.7);
           font-size: 14px;
           padding: 5px 10px;
@@ -345,36 +521,40 @@ const CourseDetails = () => {
           border-radius: 3px;
         }
         
-        @media (max-width: 768px) {
-          .mobile-share-overlay {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 50px;
-            height: 50px;
-            pointer-events: all;
-            background: transparent;
-            z-index: 9999;
-          }
-          .desktop-copy-overlay {
-            display: none;
-          }
+        /* Video protection styles */
+        .video-protection-overlay {
+          cursor: pointer;
         }
         
-        @media (min-width: 769px) {
-          .desktop-copy-overlay {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 50px;
-            height: 50px;
-            pointer-events: all;
-            background: transparent;
-            z-index: 9999;
-          }
-          .mobile-share-overlay {
-            display: none;
-          }
+        .video-share-block {
+          cursor: default;
+          background: transparent;
+        }
+        
+        .video-fullscreen-block {
+          cursor: default;
+          background: transparent;
+        }
+        
+        .video-settings-block {
+          cursor: default;
+          background: transparent;
+        }
+        
+        /* Custom control styles */
+        .video-controls-container button {
+          background: rgba(0, 0, 0, 0.6);
+          border-radius: 50%;
+          padding: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        
+        .video-controls-container button:hover {
+          background: rgba(0, 0, 0, 0.8);
         }
       `}</style>
     </>
