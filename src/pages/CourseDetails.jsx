@@ -196,6 +196,7 @@ const CourseDetails = () => {
         playsinline: 1,
         autoplay: 0,
         origin: window.location.origin,
+        nohistory:1
       },
       events: {
         onReady: onPlayerReady,
